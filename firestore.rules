@@ -1,0 +1,85 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── helpers ──────────────────────────────────────────────────────────────
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isClosed(yearMonth) {
+      let closing = get(/databases/$(database)/documents/monthly_closings/$(yearMonth));
+      return closing.data.closed == true;
+    }
+
+    function workDateMonth(workDate) {
+      return workDate.split('-')[0] + '-' + workDate.split('-')[1];
+    }
+
+    // ── users ─────────────────────────────────────────────────────────────────
+    match /users/{uid} {
+      allow read: if isAuthenticated() && (isOwner(uid) || isAdmin());
+      allow create: if isAuthenticated() && isOwner(uid);
+      allow update, delete: if false;
+    }
+
+    // ── attendance ────────────────────────────────────────────────────────────
+    // 全書き込みは Cloud Functions (Admin SDK) のみ
+    match /attendance/{docId} {
+      allow read: if isAuthenticated()
+        && (resource.data.uid == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+
+    // ── attendance_requests ───────────────────────────────────────────────────
+    match /attendance_requests/{docId} {
+      allow read: if isAuthenticated()
+        && (resource.data.uid == request.auth.uid || isAdmin());
+      // 本人のみ新規作成可・更新は Functions 経由のみ
+      allow create: if isAuthenticated()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow update, delete: if false;
+    }
+
+    // ── leave_requests ────────────────────────────────────────────────────────
+    match /leave_requests/{docId} {
+      allow read: if isAuthenticated()
+        && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.status == 'pending';
+      allow update, delete: if false;
+    }
+
+    // ── leave_grants ──────────────────────────────────────────────────────────
+    match /leave_grants/{docId} {
+      allow read: if isAuthenticated()
+        && (resource.data.uid == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+
+    // ── leave_usage ───────────────────────────────────────────────────────────
+    match /leave_usage/{docId} {
+      allow read: if isAuthenticated()
+        && (resource.data.uid == request.auth.uid || isAdmin());
+      allow write: if false;
+    }
+
+    // ── monthly_closings ──────────────────────────────────────────────────────
+    match /monthly_closings/{yearMonth} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+  }
+}
