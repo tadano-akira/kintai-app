@@ -1,5 +1,4 @@
-import { Box, Typography, Paper } from '@mui/material';
-import Grid from '@mui/material/Grid2';
+import { Box, Typography, Paper, Grid } from '@mui/material';
 import { useAuth } from '../../hooks/useAuth';
 
 export function AdminDashboard() {
