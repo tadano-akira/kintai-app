@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   AppBar,
@@ -11,7 +12,11 @@ import {
   Typography,
   Button,
   Divider,
+  IconButton,
+  useMediaQuery,
+  useTheme,
 } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
 import { signOut } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { useAuth } from '../hooks/useAuth';
@@ -23,7 +28,6 @@ const staffNav = [
   { label: '勤怠一覧', path: '/staff/attendance' },
   { label: '修正申請', path: '/staff/correction' },
   { label: '休暇申請', path: '/staff/leave' },
-  { label: '有給残数', path: '/staff/balance' },
 ];
 
 const adminNav = [
@@ -40,6 +44,9 @@ export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { appUser } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const nav = appUser?.role === 'admin' ? adminNav : staffNav;
 
@@ -48,44 +55,84 @@ export function Layout({ children }: { children: ReactNode }) {
     navigate('/login');
   };
 
+  const handleNavClick = (path: string) => {
+    navigate(path);
+    if (isMobile) setMobileOpen(false);
+  };
+
+  const drawerContent = (
+    <>
+      <Toolbar />
+      <Divider />
+      <List>
+        {nav.map((item) => (
+          <ListItemButton
+            key={item.path}
+            selected={location.pathname === item.path}
+            onClick={() => handleNavClick(item.path)}
+          >
+            <ListItemText primary={item.label} />
+          </ListItemButton>
+        ))}
+      </List>
+    </>
+  );
+
   return (
     <Box sx={{ display: 'flex' }}>
       <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
         <Toolbar>
+          {/* モバイルのみハンバーガーボタンを表示 */}
+          {isMobile && (
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={() => setMobileOpen(true)}
+              sx={{ mr: 1 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             勤怠管理
           </Typography>
-          <Typography variant="body2" sx={{ mr: 2 }}>
-            {appUser?.name}
-          </Typography>
-          <Button color="inherit" onClick={handleLogout}>
+          {!isMobile && (
+            <Typography variant="body2" sx={{ mr: 2 }}>
+              {appUser?.name}
+            </Typography>
+          )}
+          <Button color="inherit" onClick={handleLogout} size={isMobile ? 'small' : 'medium'}>
             ログアウト
           </Button>
         </Toolbar>
       </AppBar>
 
-      <Drawer
-        variant="permanent"
-        sx={{
-          width: DRAWER_WIDTH,
-          flexShrink: 0,
-          '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box' },
-        }}
-      >
-        <Toolbar />
-        <Divider />
-        <List>
-          {nav.map((item) => (
-            <ListItemButton
-              key={item.path}
-              selected={location.pathname === item.path}
-              onClick={() => navigate(item.path)}
-            >
-              <ListItemText primary={item.label} />
-            </ListItemButton>
-          ))}
-        </List>
-      </Drawer>
+      {/* モバイル：タップで開く一時ドロワー */}
+      {isMobile ? (
+        <Drawer
+          variant="temporary"
+          open={mobileOpen}
+          onClose={() => setMobileOpen(false)}
+          ModalProps={{ keepMounted: true }}
+          sx={{
+            '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box' },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      ) : (
+        /* PC：常時表示の固定ドロワー */
+        <Drawer
+          variant="permanent"
+          sx={{
+            width: DRAWER_WIDTH,
+            flexShrink: 0,
+            '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box' },
+          }}
+        >
+          {drawerContent}
+        </Drawer>
+      )}
 
       <Box component="main" sx={{ flexGrow: 1, minWidth: 0 }}>
         <Toolbar />
