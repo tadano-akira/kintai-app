@@ -1,7 +1,6 @@
 import * as admin from 'firebase-admin';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { setGlobalOptions } from 'firebase-functions/v2';
-import * as iconv from 'iconv-lite';
 import { format } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 
@@ -17,17 +16,20 @@ function assertAuth(auth: { uid: string; token: admin.auth.DecodedIdToken } | un
   return auth;
 }
 
-function assertRole(
-  auth: { uid: string; token: admin.auth.DecodedIdToken },
-  role: 'staff' | 'admin'
-) {
-  if (auth.token['role'] !== role && role === 'admin') {
+async function assertAdmin(auth: { uid: string }) {
+  const snap = await db.collection('users').doc(auth.uid).get();
+  if (!snap.exists || snap.data()?.role !== 'admin') {
     throw new HttpsError('permission-denied', '管理者権限が必要です');
   }
 }
 
 function todayJST(): string {
   return format(toZonedTime(new Date(), 'Asia/Tokyo'), 'yyyy-MM-dd');
+}
+
+// "YYYY-MM-DD" + "HH:mm" → Firestore Timestamp (JST として解釈)
+function timeToTimestamp(date: string, time: string): admin.firestore.Timestamp {
+  return admin.firestore.Timestamp.fromDate(new Date(`${date}T${time}:00+09:00`));
 }
 
 // ── clockIn ───────────────────────────────────────────────────────────────────
@@ -93,7 +95,7 @@ export const clockOut = onCall(async (request) => {
 
 export const approveAttendanceRequest = onCall(async (request) => {
   const auth = assertAuth(request.auth);
-  assertRole(auth, 'admin');
+  await assertAdmin(auth);
   const { requestId } = request.data as { requestId: string };
 
   const reqRef = db.collection('attendance_requests').doc(requestId);
@@ -111,6 +113,14 @@ export const approveAttendanceRequest = onCall(async (request) => {
       .collection('attendance')
       .doc(`${data.uid}_${data.targetDate}`);
 
+    // トランザクション内で attendance を read して競合検出に参加
+    const attendanceSnap = await tx.get(attendanceRef);
+
+    const clockInTs = timeToTimestamp(data.targetDate, data.afterClockIn);
+    const clockOutTs = data.afterClockOut
+      ? timeToTimestamp(data.targetDate, data.afterClockOut)
+      : null;
+
     tx.update(reqRef, {
       status: 'approved',
       approvedBy: auth.uid,
@@ -119,12 +129,30 @@ export const approveAttendanceRequest = onCall(async (request) => {
       updatedBy: auth.uid,
     });
 
-    tx.update(attendanceRef, {
-      clockIn: data.afterClockIn ?? data.beforeClockIn,
-      clockOut: data.afterClockOut ?? null,
-      updatedAt: now,
-      updatedBy: auth.uid,
-    });
+    if (attendanceSnap.exists) {
+      // 上書き更新（複数の修正申請を順に承認できる）
+      tx.update(attendanceRef, {
+        clockIn: clockInTs,
+        clockOut: clockOutTs,
+        updatedAt: now,
+        updatedBy: auth.uid,
+      });
+    } else {
+      // 打刻なしで修正申請された場合は新規作成
+      tx.set(attendanceRef, {
+        uid: data.uid,
+        workDate: data.targetDate,
+        clockIn: clockInTs,
+        clockOut: clockOutTs,
+        workType: 'work',
+        comment: '',
+        status: 'none',
+        createdAt: now,
+        updatedAt: now,
+        createdBy: auth.uid,
+        updatedBy: auth.uid,
+      });
+    }
   });
 
   return { success: true };
@@ -134,7 +162,7 @@ export const approveAttendanceRequest = onCall(async (request) => {
 
 export const rejectAttendanceRequest = onCall(async (request) => {
   const auth = assertAuth(request.auth);
-  assertRole(auth, 'admin');
+  await assertAdmin(auth);
   const { requestId } = request.data as { requestId: string };
 
   const now = admin.firestore.FieldValue.serverTimestamp();
@@ -153,7 +181,7 @@ export const rejectAttendanceRequest = onCall(async (request) => {
 
 export const approveLeaveRequest = onCall(async (request) => {
   const auth = assertAuth(request.auth);
-  assertRole(auth, 'admin');
+  await assertAdmin(auth);
   const { requestId } = request.data as { requestId: string };
 
   const reqRef = db.collection('leave_requests').doc(requestId);
@@ -196,7 +224,7 @@ export const approveLeaveRequest = onCall(async (request) => {
 
 export const rejectLeaveRequest = onCall(async (request) => {
   const auth = assertAuth(request.auth);
-  assertRole(auth, 'admin');
+  await assertAdmin(auth);
   const { requestId } = request.data as { requestId: string };
 
   const now = admin.firestore.FieldValue.serverTimestamp();
@@ -215,7 +243,7 @@ export const rejectLeaveRequest = onCall(async (request) => {
 
 export const grantLeave = onCall(async (request) => {
   const auth = assertAuth(request.auth);
-  assertRole(auth, 'admin');
+  await assertAdmin(auth);
 
   const data = request.data as {
     uid: string;
@@ -269,7 +297,7 @@ export const getLeaveBalance = onCall(async (request) => {
 
 export const closeMonthlyAttendance = onCall(async (request) => {
   const auth = assertAuth(request.auth);
-  assertRole(auth, 'admin');
+  await assertAdmin(auth);
   const { yearMonth } = request.data as { yearMonth: string };
 
   const now = admin.firestore.FieldValue.serverTimestamp();
@@ -287,7 +315,7 @@ export const closeMonthlyAttendance = onCall(async (request) => {
 
 export const reopenMonthlyAttendance = onCall(async (request) => {
   const auth = assertAuth(request.auth);
-  assertRole(auth, 'admin');
+  await assertAdmin(auth);
   const { yearMonth } = request.data as { yearMonth: string };
 
   const now = admin.firestore.FieldValue.serverTimestamp();
@@ -300,11 +328,33 @@ export const reopenMonthlyAttendance = onCall(async (request) => {
   return { success: true };
 });
 
+// ── updateUser ────────────────────────────────────────────────────────────────
+
+export const updateUser = onCall(async (request) => {
+  const auth = assertAuth(request.auth);
+  await assertAdmin(auth);
+
+  const { uid, name, employeeId } = request.data as {
+    uid: string;
+    name: string;
+    employeeId?: string;
+  };
+
+  if (!name?.trim()) throw new HttpsError('invalid-argument', '名前は必須です');
+
+  await db.collection('users').doc(uid).update({
+    name: name.trim(),
+    employeeId: employeeId?.trim() || null,
+  });
+
+  return { success: true };
+});
+
 // ── exportAttendanceCsv ───────────────────────────────────────────────────────
 
 export const exportAttendanceCsv = onCall(async (request) => {
   const auth = assertAuth(request.auth);
-  assertRole(auth, 'admin');
+  await assertAdmin(auth);
   const { yearMonth } = request.data as { yearMonth: string };
 
   const [year, month] = yearMonth.split('-').map(Number);
@@ -345,8 +395,9 @@ export const exportAttendanceCsv = onCall(async (request) => {
   const header = '社員ID,氏名,日付,区分,出勤時刻,退勤時刻,コメント';
   const csv = [header, ...rows].join('\r\n');
 
-  const sjisBuffer = iconv.encode(csv, 'Shift_JIS');
-  const base64 = sjisBuffer.toString('base64');
+  // BOM付きUTF-8（Excelで開いた際の文字化け防止）
+  const bom = '﻿';
+  const base64 = Buffer.from(bom + csv, 'utf8').toString('base64');
 
-  return { csv: base64, encoding: 'Shift_JIS' };
+  return { csv: base64, encoding: 'UTF-8-BOM' };
 });

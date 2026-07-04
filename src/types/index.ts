@@ -17,6 +17,7 @@ export type GrantType = 'annual' | 'special' | 'adjustment';
 
 export interface User {
   uid: string;
+  employeeId?: string;
   name: string;
   email: string;
   role: Role;

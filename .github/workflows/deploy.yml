@@ -31,17 +31,12 @@ jobs:
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
 
       - name: Install Functions dependencies
-        run: npm ci
         working-directory: functions
+        run: npm ci
 
       - name: Build Functions
-        run: npm run build
         working-directory: functions
+        run: npm run build
 
-      - name: Deploy to Firebase
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          channelId: live
-          projectId: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+      - name: Deploy to Firebase (Hosting + Functions)
+        run: npx firebase-tools deploy --only hosting,functions --token "${{ secrets.FIREBASE_TOKEN }}"

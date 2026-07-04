@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import type { User as FirebaseUser } from 'firebase/auth';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import type { User } from '../types';
 
@@ -18,16 +19,31 @@ export function useAuth(): AuthState {
   });
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    let unsubscribeUser: (() => void) | null = null;
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      if (unsubscribeUser) {
+        unsubscribeUser();
+        unsubscribeUser = null;
+      }
+
       if (!firebaseUser) {
         setState({ firebaseUser: null, appUser: null, loading: false });
         return;
       }
-      const snap = await getDoc(doc(db, 'users', firebaseUser.uid));
-      const appUser = snap.exists() ? (snap.data() as User) : null;
-      setState({ firebaseUser, appUser, loading: false });
+
+      // onSnapshot でユーザードキュメントをリアルタイム監視
+      // 初回ログイン時に Login.tsx が setDoc した瞬間に appUser が更新される
+      unsubscribeUser = onSnapshot(doc(db, 'users', firebaseUser.uid), (snap) => {
+        const appUser = snap.exists() ? (snap.data() as User) : null;
+        setState({ firebaseUser, appUser, loading: false });
+      });
     });
-    return unsubscribe;
+
+    return () => {
+      unsubscribeAuth();
+      if (unsubscribeUser) unsubscribeUser();
+    };
   }, []);
 
   return state;

@@ -6,25 +6,33 @@ import { CircularProgress, Box } from '@mui/material';
 interface Props {
   children: React.ReactNode;
   requiredRole?: Role;
+  /** 未認証時のリダイレクト先 */
+  loginPath?: string;
 }
 
-export function PrivateRoute({ children, requiredRole }: Props) {
+export function PrivateRoute({ children, requiredRole, loginPath = '/login' }: Props) {
   const { firebaseUser, appUser, loading } = useAuth();
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
         <CircularProgress />
       </Box>
     );
   }
 
   if (!firebaseUser || !appUser) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to={loginPath} replace />;
   }
 
-  if (requiredRole && appUser.role !== requiredRole) {
-    return <Navigate to="/" replace />;
+  // admin はすべての画面にアクセス可。staff は staff 画面のみ。
+  const hasAccess =
+    !requiredRole ||
+    appUser.role === requiredRole ||
+    appUser.role === 'admin';
+
+  if (!hasAccess) {
+    return <Navigate to="/staff" replace />;
   }
 
   return <>{children}</>;

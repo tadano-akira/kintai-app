@@ -55,3 +55,8 @@ export const exportAttendanceCsv = callFunction<
   { yearMonth: string },
   { csv: string }
 >('exportAttendanceCsv');
+
+export const updateUser = callFunction<
+  { uid: string; name: string; employeeId?: string },
+  { success: boolean }
+>('updateUser');

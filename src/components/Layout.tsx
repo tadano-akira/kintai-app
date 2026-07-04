@@ -33,6 +33,7 @@ const adminNav = [
   { label: 'CSV出力', path: '/admin/csv' },
   { label: '月次締め', path: '/admin/closing' },
   { label: '有給付与', path: '/admin/leave-grants' },
+  { label: '社員管理', path: '/admin/users' },
 ];
 
 export function Layout({ children }: { children: ReactNode }) {
@@ -48,13 +49,13 @@ export function Layout({ children }: { children: ReactNode }) {
   };
 
   return (
-    <Box display="flex">
+    <Box sx={{ display: 'flex' }}>
       <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
         <Toolbar>
-          <Typography variant="h6" flexGrow={1}>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
             勤怠管理
           </Typography>
-          <Typography variant="body2" mr={2}>
+          <Typography variant="body2" sx={{ mr: 2 }}>
             {appUser?.name}
           </Typography>
           <Button color="inherit" onClick={handleLogout}>
@@ -67,6 +68,7 @@ export function Layout({ children }: { children: ReactNode }) {
         variant="permanent"
         sx={{
           width: DRAWER_WIDTH,
+          flexShrink: 0,
           '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box' },
         }}
       >
@@ -85,7 +87,7 @@ export function Layout({ children }: { children: ReactNode }) {
         </List>
       </Drawer>
 
-      <Box component="main" flexGrow={1} ml={`${DRAWER_WIDTH}px`}>
+      <Box component="main" sx={{ flexGrow: 1, minWidth: 0 }}>
         <Toolbar />
         {children}
       </Box>
