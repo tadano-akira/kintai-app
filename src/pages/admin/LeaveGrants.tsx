@@ -18,7 +18,7 @@ import {
   Chip,
   CircularProgress,
 } from '@mui/material';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { db } from '../../lib/firebase';
 import { grantLeave } from '../../lib/functions';
@@ -106,12 +106,12 @@ export function AdminLeaveGrants() {
   };
 
   return (
-    <Box p={3}>
-      <Typography variant="h6" mb={3}>有給付与管理</Typography>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h6" sx={{ mb: 3 }}>有給付与管理</Typography>
 
       {/* 付与フォーム */}
       <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="subtitle1" fontWeight="bold" mb={2}>有給を付与する</Typography>
+        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>有給を付与する</Typography>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 480 }}>
           <TextField
@@ -142,7 +142,7 @@ export function AdminLeaveGrants() {
               type="date"
               value={grantDate}
               onChange={(e) => setGrantDate(e.target.value)}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{ inputLabel: { shrink: true } }}
               fullWidth
             />
             <TextField
@@ -150,7 +150,7 @@ export function AdminLeaveGrants() {
               type="number"
               value={days}
               onChange={(e) => setDays(e.target.value)}
-              inputProps={{ min: 1, max: 40 }}
+              slotProps={{ htmlInput: { min: 1, max: 40 } }}
               fullWidth
             />
           </Box>
@@ -160,7 +160,7 @@ export function AdminLeaveGrants() {
             type="date"
             value={expireDate}
             onChange={(e) => setExpireDate(e.target.value)}
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
             helperText="通常は付与日から2年後"
           />
 
@@ -185,12 +185,12 @@ export function AdminLeaveGrants() {
       <Divider sx={{ mb: 3 }} />
 
       {/* 付与履歴 */}
-      <Typography variant="subtitle1" fontWeight="bold" mb={2}>付与履歴</Typography>
+      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>付与履歴</Typography>
 
       {loadingGrants ? (
         <CircularProgress size={24} />
       ) : grants.length === 0 ? (
-        <Typography color="text.secondary">付与履歴はありません</Typography>
+        <Typography sx={{ color: 'text.secondary' }}>付与履歴はありません</Typography>
       ) : (
         <TableContainer component={Paper} elevation={1}>
           <Table size="small">

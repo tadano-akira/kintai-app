@@ -65,17 +65,17 @@ export function StaffDashboard() {
   };
 
   return (
-    <Box p={3}>
-      <Typography variant="h6" mb={1}>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h6" sx={{ mb: 1 }}>
         こんにちは、{appUser?.name} さん
       </Typography>
-      <Typography variant="body2" color="text.secondary" mb={3}>
+      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
         {today}
       </Typography>
 
       {/* 打刻 */}
       <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-        <Typography variant="subtitle1" fontWeight="bold" mb={2}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
           打刻
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -90,7 +90,7 @@ export function StaffDashboard() {
 
       {/* 本日のステータス */}
       <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-        <Typography variant="subtitle1" fontWeight="bold" mb={2}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
           本日のステータス
         </Typography>
         {todayRecord === undefined ? (
@@ -100,14 +100,14 @@ export function StaffDashboard() {
         ) : todayRecord.clockOut ? (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Chip label="退勤済み" color="success" />
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {tsToTime(todayRecord.clockIn)} 〜 {tsToTime(todayRecord.clockOut)}
             </Typography>
           </Box>
         ) : (
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
             <Chip label="出勤中" color="primary" />
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
               {tsToTime(todayRecord.clockIn)} 〜
             </Typography>
           </Box>
@@ -118,7 +118,7 @@ export function StaffDashboard() {
       <Paper elevation={2} sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
           <BeachAccessIcon color="success" />
-          <Typography variant="subtitle1" fontWeight="bold">
+          <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
             有給残数
           </Typography>
         </Box>
@@ -126,28 +126,28 @@ export function StaffDashboard() {
         {balanceLoading ? (
           <Skeleton variant="text" width={200} height={40} />
         ) : balance === null ? (
-          <Typography color="text.secondary">データなし</Typography>
+          <Typography sx={{ color: 'text.secondary' }}>データなし</Typography>
         ) : (
           <>
             <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 1 }}>
-              <Typography variant="h4" fontWeight="bold" color="success.main">
+              <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'success.main' }}>
                 {balance.remaining}
               </Typography>
-              <Typography variant="body1" color="text.secondary">日</Typography>
+              <Typography variant="body1" sx={{ color: 'text.secondary' }}>日</Typography>
             </Box>
             <Divider sx={{ my: 1.5 }} />
             <Box sx={{ display: 'flex', gap: 3 }}>
               <Box>
-                <Typography variant="caption" color="text.secondary">付与</Typography>
-                <Typography variant="body2" fontWeight="bold">{balance.totalGranted} 日</Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>付与</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{balance.totalGranted} 日</Typography>
               </Box>
               <Box>
-                <Typography variant="caption" color="text.secondary">使用</Typography>
-                <Typography variant="body2" fontWeight="bold">{balance.totalUsed} 日</Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>使用</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 'bold' }}>{balance.totalUsed} 日</Typography>
               </Box>
               <Box>
-                <Typography variant="caption" color="text.secondary">残数</Typography>
-                <Typography variant="body2" fontWeight="bold" color="success.main">
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>残数</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'success.main' }}>
                   {balance.remaining} 日
                 </Typography>
               </Box>

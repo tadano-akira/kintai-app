@@ -20,7 +20,7 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import { collection, getDocs, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { updateUser } from '../../lib/functions';
 import type { User } from '../../types';
@@ -82,9 +82,9 @@ export function AdminUsers() {
   };
 
   return (
-    <Box p={3}>
-      <Typography variant="h6" mb={1}>社員管理</Typography>
-      <Typography variant="body2" color="text.secondary" mb={3}>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h6" sx={{ mb: 1 }}>社員管理</Typography>
+      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
         名前・社員IDを編集できます。社員IDはCSV出力に使用されます。
       </Typography>
 
@@ -118,7 +118,7 @@ export function AdminUsers() {
                           sx={{ width: 120 }}
                         />
                       ) : (
-                        <Typography variant="body2" fontFamily="monospace">
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
                           {user.employeeId || <span style={{ color: '#aaa' }}>未設定</span>}
                         </Typography>
                       )}
@@ -140,7 +140,7 @@ export function AdminUsers() {
 
                     {/* メール */}
                     <TableCell>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                         {user.email}
                       </Typography>
                     </TableCell>

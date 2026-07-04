@@ -92,8 +92,8 @@ export function AdminAttendanceList() {
   }, [users, yearMonth, selectedUid]);
 
   return (
-    <Box p={3}>
-      <Typography variant="h6" mb={3}>全社員勤怠一覧</Typography>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h6" sx={{ mb: 3 }}>全社員勤怠一覧</Typography>
 
       {/* ツールバー */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, flexWrap: 'wrap' }}>
@@ -123,7 +123,7 @@ export function AdminAttendanceList() {
           ))}
         </TextField>
 
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {records.length} 件
         </Typography>
       </Box>

@@ -56,13 +56,13 @@ export function Login({ redirectTo, roleLabel }: Props) {
             {cfg.icon}
           </Box>
         )}
-        <Typography variant="h5" fontWeight="bold" mb={1}>
+        <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 1 }}>
           勤怠管理システム
         </Typography>
         {cfg && (
           <Chip label={cfg.label + 'ログイン'} size="small" sx={{ mb: 2 }} />
         )}
-        <Typography variant="body2" color="text.secondary" mb={4}>
+        <Typography variant="body2" sx={{ color: 'text.secondary', mb: 4 }}>
           Googleアカウントでログインしてください
         </Typography>
         <Button

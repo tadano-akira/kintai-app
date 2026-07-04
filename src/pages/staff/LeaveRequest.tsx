@@ -119,11 +119,11 @@ export function LeaveRequest() {
   };
 
   return (
-    <Box p={3}>
-      <Typography variant="h6" mb={3}>休暇申請</Typography>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h6" sx={{ mb: 3 }}>休暇申請</Typography>
 
       <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="subtitle1" fontWeight="bold" mb={2}>新規申請</Typography>
+        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>新規申請</Typography>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 480 }}>
           <TextField
@@ -131,7 +131,7 @@ export function LeaveRequest() {
             type="date"
             value={targetDate}
             onChange={(e) => setTargetDate(e.target.value)}
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
 
           <TextField
@@ -178,12 +178,12 @@ export function LeaveRequest() {
 
       <Divider sx={{ mb: 3 }} />
 
-      <Typography variant="subtitle1" fontWeight="bold" mb={2}>申請履歴</Typography>
+      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>申請履歴</Typography>
 
       {loadingHistory ? (
         <CircularProgress size={24} />
       ) : history.length === 0 ? (
-        <Typography color="text.secondary">申請履歴はありません</Typography>
+        <Typography sx={{ color: 'text.secondary' }}>申請履歴はありません</Typography>
       ) : (
         <TableContainer component={Paper} elevation={1}>
           <Table size="small">

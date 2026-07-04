@@ -117,8 +117,8 @@ export function AdminCsvExport() {
   };
 
   return (
-    <Box p={3}>
-      <Typography variant="h6" mb={3}>CSV出力</Typography>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h6" sx={{ mb: 3 }}>CSV出力</Typography>
 
       <Paper elevation={2} sx={{ p: 4, maxWidth: 480 }}>
         {/* 月ナビゲーション */}

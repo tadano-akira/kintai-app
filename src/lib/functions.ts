@@ -1,8 +1,6 @@
 import { callFunction } from './firebase';
 import type {
   Attendance,
-  AttendanceRequest,
-  LeaveRequest,
   LeaveGrant,
   LeaveBalance,
 } from '../types';

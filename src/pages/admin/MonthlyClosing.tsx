@@ -72,8 +72,8 @@ export function AdminMonthlyClosing() {
   };
 
   return (
-    <Box p={3}>
-      <Typography variant="h6" mb={3}>月次締め</Typography>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h6" sx={{ mb: 3 }}>月次締め</Typography>
 
       {/* 月ナビゲーション */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 4 }}>
@@ -91,7 +91,7 @@ export function AdminMonthlyClosing() {
       {/* 締め状態 */}
       <Paper elevation={2} sx={{ p: 4, maxWidth: 480 }}>
         {loading ? (
-          <Typography color="text.secondary">読み込み中…</Typography>
+          <Typography sx={{ color: 'text.secondary' }}>読み込み中…</Typography>
         ) : (
           <>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
@@ -111,7 +111,7 @@ export function AdminMonthlyClosing() {
             </Box>
 
             {isClosed && closing?.closedAt && (
-              <Typography variant="body2" color="text.secondary" mb={3}>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
                 締め日時：{format((closing.closedAt as any).toDate(), 'yyyy/MM/dd HH:mm')}
               </Typography>
             )}

@@ -27,13 +27,7 @@ import {
   approveLeaveRequest,
   rejectLeaveRequest,
 } from '../../lib/functions';
-import type { AttendanceRequest, LeaveRequest, RequestStatus, User } from '../../types';
-
-const STATUS_LABEL: Record<RequestStatus, { label: string; color: 'warning' | 'success' | 'error' }> = {
-  pending:  { label: '審査中', color: 'warning' },
-  approved: { label: '承認済', color: 'success' },
-  rejected: { label: '却下',   color: 'error' },
-};
+import type { AttendanceRequest, LeaveRequest, User } from '../../types';
 
 const LEAVE_TYPE_LABEL: Record<string, string> = {
   paid_leave:         '有給休暇',
@@ -121,8 +115,8 @@ export function AdminRequests() {
   };
 
   return (
-    <Box p={3}>
-      <Typography variant="h6" mb={2}>申請承認</Typography>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h6" sx={{ mb: 2 }}>申請承認</Typography>
 
       <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 3 }}>
         <Tab label={`勤怠修正申請 ${attendanceReqs.length > 0 ? `(${attendanceReqs.length})` : ''}`} />
@@ -138,7 +132,7 @@ export function AdminRequests() {
           {/* 勤怠修正申請タブ */}
           {tab === 0 && (
             attendanceReqs.length === 0 ? (
-              <Typography color="text.secondary">承認待ちの修正申請はありません</Typography>
+              <Typography sx={{ color: 'text.secondary' }}>承認待ちの修正申請はありません</Typography>
             ) : (
               <TableContainer component={Paper} elevation={2}>
                 <Table size="small">
@@ -194,7 +188,7 @@ export function AdminRequests() {
           {/* 休暇申請タブ */}
           {tab === 1 && (
             leaveReqs.length === 0 ? (
-              <Typography color="text.secondary">承認待ちの休暇申請はありません</Typography>
+              <Typography sx={{ color: 'text.secondary' }}>承認待ちの休暇申請はありません</Typography>
             ) : (
               <TableContainer component={Paper} elevation={2}>
                 <Table size="small">

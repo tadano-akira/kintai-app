@@ -142,12 +142,12 @@ export function CorrectionRequest() {
   };
 
   return (
-    <Box p={3}>
-      <Typography variant="h6" mb={3}>勤怠修正申請</Typography>
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h6" sx={{ mb: 3 }}>勤怠修正申請</Typography>
 
       {/* 申請フォーム */}
       <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
-        <Typography variant="subtitle1" fontWeight="bold" mb={2}>新規申請</Typography>
+        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>新規申請</Typography>
 
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, maxWidth: 480 }}>
           <TextField
@@ -155,21 +155,20 @@ export function CorrectionRequest() {
             type="date"
             value={targetDate}
             onChange={(e) => setTargetDate(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            inputProps={{ max: format(new Date(), 'yyyy-MM-dd') }}
+            slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: format(new Date(), 'yyyy-MM-dd') } }}
           />
 
           {/* 既存打刻の表示 */}
           {loadingExisting && <CircularProgress size={20} />}
           {targetDate && !loadingExisting && (
             <Box sx={{ bgcolor: 'grey.100', borderRadius: 1, p: 2 }}>
-              <Typography variant="body2" color="text.secondary" mb={0.5}>現在の打刻</Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5 }}>現在の打刻</Typography>
               {existing ? (
                 <Typography variant="body2">
                   出勤：{tsToTime(existing.clockIn as any)}　退勤：{tsToTime(existing.clockOut as any)}
                 </Typography>
               ) : (
-                <Typography variant="body2" color="text.secondary">この日の打刻記録がありません</Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>この日の打刻記録がありません</Typography>
               )}
             </Box>
           )}
@@ -179,7 +178,7 @@ export function CorrectionRequest() {
             type="time"
             value={afterClockIn}
             onChange={(e) => setAfterClockIn(e.target.value)}
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
 
           <TextField
@@ -187,7 +186,7 @@ export function CorrectionRequest() {
             type="time"
             value={afterClockOut}
             onChange={(e) => setAfterClockOut(e.target.value)}
-            InputLabelProps={{ shrink: true }}
+            slotProps={{ inputLabel: { shrink: true } }}
           />
 
           <TextField
@@ -213,12 +212,12 @@ export function CorrectionRequest() {
       <Divider sx={{ mb: 3 }} />
 
       {/* 申請履歴 */}
-      <Typography variant="subtitle1" fontWeight="bold" mb={2}>申請履歴</Typography>
+      <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>申請履歴</Typography>
 
       {loadingHistory ? (
         <CircularProgress size={24} />
       ) : history.length === 0 ? (
-        <Typography color="text.secondary">申請履歴はありません</Typography>
+        <Typography sx={{ color: 'text.secondary' }}>申請履歴はありません</Typography>
       ) : (
         <TableContainer component={Paper} elevation={1}>
           <Table size="small">

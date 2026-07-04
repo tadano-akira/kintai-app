@@ -71,7 +71,7 @@ export function MyAttendance() {
   }, [firebaseUser, yearMonth]);
 
   return (
-    <Box p={3}>
+    <Box sx={{ p: 3 }}>
       {/* 月ナビゲーション */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
         <IconButton onClick={() => setBaseDate((d) => subMonths(d, 1))}>
