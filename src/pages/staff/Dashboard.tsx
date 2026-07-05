@@ -9,8 +9,11 @@ import {
   Snackbar,
   Divider,
   Skeleton,
+  CircularProgress,
 } from '@mui/material';
 import BeachAccessIcon from '@mui/icons-material/BeachAccess';
+import LoginIcon from '@mui/icons-material/Login';
+import LogoutIcon from '@mui/icons-material/Logout';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../../hooks/useAuth';
 import { useLeaveBalance } from '../../hooks/useLeaveBalance';
@@ -30,6 +33,8 @@ export function StaffDashboard() {
   const { balance, loading: balanceLoading } = useLeaveBalance(appUser?.uid);
   const [message, setMessage] = useState<{ text: string; severity: 'success' | 'error' } | null>(null);
   const [todayRecord, setTodayRecord] = useState<Attendance | null | undefined>(undefined);
+  const [clockingIn, setClockingIn] = useState(false);
+  const [clockingOut, setClockingOut] = useState(false);
 
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const today = format(new Date(), 'yyyy年M月d日(E)', { locale: ja });
@@ -45,24 +50,37 @@ export function StaffDashboard() {
   }, [appUser?.uid, todayStr]);
 
   const handleClockIn = async () => {
+    setClockingIn(true);
     try {
       await clockIn();
       setMessage({ text: '出勤を記録しました', severity: 'success' });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '出勤記録に失敗しました';
       setMessage({ text: msg, severity: 'error' });
+    } finally {
+      setClockingIn(false);
     }
   };
 
   const handleClockOut = async () => {
+    setClockingOut(true);
     try {
       await clockOut();
       setMessage({ text: '退勤を記録しました', severity: 'success' });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : '退勤記録に失敗しました';
       setMessage({ text: msg, severity: 'error' });
+    } finally {
+      setClockingOut(false);
     }
   };
+
+  // ボタンの有効・無効をステータスから決定
+  const isLoading = todayRecord === undefined;
+  const alreadyClockedIn = !!todayRecord?.clockIn;
+  const alreadyClockedOut = !!todayRecord?.clockOut;
+  const canClockIn = !isLoading && !alreadyClockedIn;
+  const canClockOut = !isLoading && alreadyClockedIn && !alreadyClockedOut;
 
   return (
     <Box sx={{ p: 3 }}>
@@ -74,18 +92,52 @@ export function StaffDashboard() {
       </Typography>
 
       {/* 打刻 */}
-      <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+      <Paper
+        elevation={2}
+        sx={{
+          p: 3,
+          mb: 3,
+          borderLeft: 4,
+          borderColor: alreadyClockedOut
+            ? 'success.main'
+            : alreadyClockedIn
+            ? 'primary.main'
+            : 'divider',
+          transition: 'border-color 0.4s',
+        }}
+      >
         <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 2 }}>
           打刻
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button variant="contained" color="primary" size="large" onClick={handleClockIn}>
+          <Button
+            variant={canClockIn ? 'contained' : 'outlined'}
+            color="primary"
+            size="large"
+            disabled={!canClockIn || clockingIn || clockingOut}
+            onClick={handleClockIn}
+            startIcon={clockingIn ? <CircularProgress size={18} color="inherit" /> : <LoginIcon />}
+            sx={{ minWidth: 120, transition: 'all 0.2s' }}
+          >
             出勤
           </Button>
-          <Button variant="outlined" color="secondary" size="large" onClick={handleClockOut}>
+          <Button
+            variant={canClockOut ? 'contained' : 'outlined'}
+            color="warning"
+            size="large"
+            disabled={!canClockOut || clockingIn || clockingOut}
+            onClick={handleClockOut}
+            startIcon={clockingOut ? <CircularProgress size={18} color="inherit" /> : <LogoutIcon />}
+            sx={{ minWidth: 120, transition: 'all 0.2s' }}
+          >
             退勤
           </Button>
         </Box>
+        {alreadyClockedOut && (
+          <Typography variant="caption" sx={{ color: 'success.main', mt: 1.5, display: 'block' }}>
+            本日の打刻は完了しています
+          </Typography>
+        )}
       </Paper>
 
       {/* 本日のステータス */}
