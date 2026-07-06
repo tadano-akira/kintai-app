@@ -43,9 +43,16 @@ export function StaffDashboard() {
   useEffect(() => {
     if (!appUser?.uid) return;
     const ref = doc(db, 'attendance', `${appUser.uid}_${todayStr}`);
-    const unsub = onSnapshot(ref, (snap) => {
-      setTodayRecord(snap.exists() ? (snap.data() as Attendance) : null);
-    });
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        setTodayRecord(snap.exists() ? (snap.data() as Attendance) : null);
+      },
+      () => {
+        // 権限エラー等: ドキュメントなしとして扱いボタンを有効化
+        setTodayRecord(null);
+      },
+    );
     return unsub;
   }, [appUser?.uid, todayStr]);
 
