@@ -40,6 +40,12 @@ const adminNav = [
   { label: '社員管理', path: '/admin/users' },
 ];
 
+// 管理者が自分自身のスタッフ機能を使うためのリンク
+const adminPersonalNav = [
+  { label: '自分の修正申請', path: '/staff/correction' },
+  { label: '自分の休暇申請', path: '/staff/leave' },
+];
+
 export function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -75,6 +81,25 @@ export function Layout({ children }: { children: ReactNode }) {
           </ListItemButton>
         ))}
       </List>
+      {appUser?.role === 'admin' && (
+        <>
+          <Divider />
+          <Typography variant="caption" sx={{ px: 2, pt: 1, pb: 0.5, color: 'text.secondary', display: 'block' }}>
+            自分の申請
+          </Typography>
+          <List dense>
+            {adminPersonalNav.map((item) => (
+              <ListItemButton
+                key={item.path}
+                selected={location.pathname === item.path}
+                onClick={() => handleNavClick(item.path)}
+              >
+                <ListItemText primary={item.label} />
+              </ListItemButton>
+            ))}
+          </List>
+        </>
+      )}
     </>
   );
 

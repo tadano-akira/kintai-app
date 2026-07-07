@@ -44,6 +44,11 @@ function tsToTime(ts: { toDate: () => Date } | undefined | null): string {
   return format(ts.toDate(), 'HH:mm');
 }
 
+function tsToInput(ts: { toDate: () => Date } | undefined | null): string {
+  if (!ts) return '';
+  try { return format(ts.toDate(), 'HH:mm'); } catch { return ''; }
+}
+
 export function CorrectionRequest() {
   const { firebaseUser } = useAuth();
 
@@ -63,15 +68,22 @@ export function CorrectionRequest() {
   const [message, setMessage] = useState<{ text: string; severity: 'success' | 'error' } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // 対象日が変わったら既存打刻を取得
+  // 対象日が変わったら既存打刻を取得して入力欄に自動補完
   useEffect(() => {
     if (!firebaseUser || !targetDate) {
       setExisting(null);
+      setAfterClockIn('');
+      setAfterClockOut('');
       return;
     }
     setLoadingExisting(true);
     getDoc(doc(db, 'attendance', `${firebaseUser.uid}_${targetDate}`))
-      .then((snap) => setExisting(snap.exists() ? (snap.data() as Attendance) : null))
+      .then((snap) => {
+        const data = snap.exists() ? (snap.data() as Attendance) : null;
+        setExisting(data);
+        setAfterClockIn(tsToInput((data?.clockIn as any) ?? null));
+        setAfterClockOut(tsToInput((data?.clockOut as any) ?? null));
+      })
       .finally(() => setLoadingExisting(false));
   }, [firebaseUser, targetDate]);
 
@@ -179,10 +191,11 @@ export function CorrectionRequest() {
             value={afterClockIn}
             onChange={(e) => setAfterClockIn(e.target.value)}
             slotProps={{ inputLabel: { shrink: true } }}
+            helperText="対象日の打刻がある場合は自動補完されます"
           />
 
           <TextField
-            label="修正後の退勤時刻（任意）"
+            label="修正後の退勤時刻（変更しない場合は空欄）"
             type="time"
             value={afterClockOut}
             onChange={(e) => setAfterClockOut(e.target.value)}
