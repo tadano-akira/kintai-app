@@ -29,7 +29,14 @@ function todayJST(): string {
 
 // "YYYY-MM-DD" + "HH:mm" → Firestore Timestamp (JST として解釈)
 function timeToTimestamp(date: string, time: string): admin.firestore.Timestamp {
-  return admin.firestore.Timestamp.fromDate(new Date(`${date}T${time}:00+09:00`));
+  if (!date || !time) {
+    throw new HttpsError('invalid-argument', `日付または時刻が空です: date=${date}, time=${time}`);
+  }
+  const d = new Date(`${date}T${time}:00+09:00`);
+  if (isNaN(d.getTime())) {
+    throw new HttpsError('invalid-argument', `無効な日時フォーマットです: ${date}T${time}`);
+  }
+  return admin.firestore.Timestamp.fromDate(d);
 }
 
 // ── clockIn ───────────────────────────────────────────────────────────────────
@@ -106,6 +113,9 @@ export const approveAttendanceRequest = onCall(async (request) => {
     const data = snap.data()!;
     if (data.status !== 'pending') {
       throw new HttpsError('failed-precondition', '承認済みまたは却下済みの申請です');
+    }
+    if (!data.afterClockIn) {
+      throw new HttpsError('invalid-argument', '申請データに修正後の出勤時刻がありません。申請を削除して再申請してください。');
     }
 
     const now = admin.firestore.FieldValue.serverTimestamp();

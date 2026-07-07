@@ -90,8 +90,9 @@ export function AdminRequests() {
       }
       setMessage({ text: action === 'approve' ? '承認しました' : '却下しました', severity: 'success' });
       await fetchAll();
-    } catch {
-      setMessage({ text: '処理に失敗しました', severity: 'error' });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '処理に失敗しました';
+      setMessage({ text: msg, severity: 'error' });
     } finally {
       setProcessing(null);
     }
@@ -107,8 +108,9 @@ export function AdminRequests() {
       }
       setMessage({ text: action === 'approve' ? '承認しました' : '却下しました', severity: 'success' });
       await fetchAll();
-    } catch {
-      setMessage({ text: '処理に失敗しました', severity: 'error' });
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '処理に失敗しました';
+      setMessage({ text: msg, severity: 'error' });
     } finally {
       setProcessing(null);
     }
