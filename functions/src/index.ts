@@ -98,9 +98,9 @@ export const clockOut = onCall(async (request) => {
   return { success: true };
 });
 
-// ── approveAttendanceRequest ──────────────────────────────────────────────────
+// ── approveCorrection (旧 approveAttendanceRequest) ───────────────────────────
 
-export const approveAttendanceRequest = onCall(async (request) => {
+export const approveCorrection = onCall(async (request) => {
   try {
   const auth = assertAuth(request.auth);
   await assertAdmin(auth);

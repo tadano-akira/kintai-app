@@ -12,7 +12,7 @@ export const clockOut = callFunction<void, { attendance: Attendance }>('clockOut
 export const approveAttendanceRequest = callFunction<
   { requestId: string },
   { success: boolean }
->('approveAttendanceRequest');
+>('approveCorrection');
 
 export const rejectAttendanceRequest = callFunction<
   { requestId: string },
