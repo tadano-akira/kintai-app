@@ -7,7 +7,7 @@ import { toZonedTime } from 'date-fns-tz';
 admin.initializeApp();
 const db = admin.firestore();
 
-setGlobalOptions({ region: 'asia-northeast1' });
+setGlobalOptions({ region: 'asia-northeast1', invoker: 'public' });
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
