@@ -101,6 +101,7 @@ export const clockOut = onCall(async (request) => {
 // ── approveAttendanceRequest ──────────────────────────────────────────────────
 
 export const approveAttendanceRequest = onCall(async (request) => {
+  try {
   const auth = assertAuth(request.auth);
   await assertAdmin(auth);
   const { requestId } = request.data as { requestId: string };
@@ -177,6 +178,12 @@ export const approveAttendanceRequest = onCall(async (request) => {
   });
 
   return { success: true };
+  } catch (e) {
+    if (e instanceof HttpsError) throw e;
+    const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+    console.error('[approveAttendanceRequest]', msg, e);
+    throw new HttpsError('internal', msg);
+  }
 });
 
 // ── rejectAttendanceRequest ───────────────────────────────────────────────────
