@@ -107,29 +107,42 @@ export const approveAttendanceRequest = onCall(async (request) => {
 
   const reqRef = db.collection('attendance_requests').doc(requestId);
 
+  // ── バリデーションはトランザクション外で行う ────────────────────────────
+  // HttpsError をトランザクション内でスローすると Firestore が internal に変換するため
+  const reqSnap = await reqRef.get();
+  if (!reqSnap.exists) throw new HttpsError('not-found', '申請が存在しません');
+  const reqData = reqSnap.data()!;
+  if (reqData.status !== 'pending') {
+    throw new HttpsError('failed-precondition', '承認済みまたは却下済みの申請です');
+  }
+  if (!reqData.afterClockIn) {
+    throw new HttpsError(
+      'invalid-argument',
+      '申請データに修正後の出勤時刻がありません。申請を削除して再申請してください。',
+    );
+  }
+
+  // タイムスタンプ変換もトランザクション外で行い、エラーを HttpsError として返す
+  const clockInTs  = timeToTimestamp(reqData.targetDate, reqData.afterClockIn);
+  const clockOutTs = reqData.afterClockOut
+    ? timeToTimestamp(reqData.targetDate, reqData.afterClockOut)
+    : null;
+
+  const attendanceRef = db
+    .collection('attendance')
+    .doc(`${reqData.uid}_${reqData.targetDate}`);
+
+  // ── トランザクション: 読み書きのみ ──────────────────────────────────────
   await db.runTransaction(async (tx) => {
-    const snap = await tx.get(reqRef);
-    if (!snap.exists) throw new HttpsError('not-found', '申請が存在しません');
-    const data = snap.data()!;
-    if (data.status !== 'pending') {
-      throw new HttpsError('failed-precondition', '承認済みまたは却下済みの申請です');
-    }
-    if (!data.afterClockIn) {
-      throw new HttpsError('invalid-argument', '申請データに修正後の出勤時刻がありません。申請を削除して再申請してください。');
-    }
+    const [snap, attendanceSnap] = await Promise.all([
+      tx.get(reqRef),
+      tx.get(attendanceRef),
+    ]);
+
+    // 二重承認を防ぐ再確認（通常ここには到達しない）
+    if (!snap.exists || snap.data()?.status !== 'pending') return;
 
     const now = admin.firestore.FieldValue.serverTimestamp();
-    const attendanceRef = db
-      .collection('attendance')
-      .doc(`${data.uid}_${data.targetDate}`);
-
-    // トランザクション内で attendance を read して競合検出に参加
-    const attendanceSnap = await tx.get(attendanceRef);
-
-    const clockInTs = timeToTimestamp(data.targetDate, data.afterClockIn);
-    const clockOutTs = data.afterClockOut
-      ? timeToTimestamp(data.targetDate, data.afterClockOut)
-      : null;
 
     tx.update(reqRef, {
       status: 'approved',
@@ -140,7 +153,6 @@ export const approveAttendanceRequest = onCall(async (request) => {
     });
 
     if (attendanceSnap.exists) {
-      // 上書き更新（複数の修正申請を順に承認できる）
       tx.update(attendanceRef, {
         clockIn: clockInTs,
         clockOut: clockOutTs,
@@ -148,10 +160,9 @@ export const approveAttendanceRequest = onCall(async (request) => {
         updatedBy: auth.uid,
       });
     } else {
-      // 打刻なしで修正申請された場合は新規作成
       tx.set(attendanceRef, {
-        uid: data.uid,
-        workDate: data.targetDate,
+        uid: reqData.uid,
+        workDate: reqData.targetDate,
         clockIn: clockInTs,
         clockOut: clockOutTs,
         workType: 'work',
