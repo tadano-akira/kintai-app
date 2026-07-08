@@ -101,89 +101,68 @@ export const clockOut = onCall(async (request) => {
 // ── approveCorrection (旧 approveAttendanceRequest) ───────────────────────────
 
 export const approveCorrection = onCall(async (request) => {
-  try {
   const auth = assertAuth(request.auth);
   await assertAdmin(auth);
   const { requestId } = request.data as { requestId: string };
 
   const reqRef = db.collection('attendance_requests').doc(requestId);
-
-  // ── バリデーションはトランザクション外で行う ────────────────────────────
-  // HttpsError をトランザクション内でスローすると Firestore が internal に変換するため
   const reqSnap = await reqRef.get();
+
   if (!reqSnap.exists) throw new HttpsError('not-found', '申請が存在しません');
   const reqData = reqSnap.data()!;
   if (reqData.status !== 'pending') {
     throw new HttpsError('failed-precondition', '承認済みまたは却下済みの申請です');
   }
   if (!reqData.afterClockIn) {
-    throw new HttpsError(
-      'invalid-argument',
-      '申請データに修正後の出勤時刻がありません。申請を削除して再申請してください。',
-    );
+    throw new HttpsError('invalid-argument', '申請データに修正後の出勤時刻がありません');
   }
 
-  // タイムスタンプ変換もトランザクション外で行い、エラーを HttpsError として返す
   const clockInTs  = timeToTimestamp(reqData.targetDate, reqData.afterClockIn);
   const clockOutTs = reqData.afterClockOut
     ? timeToTimestamp(reqData.targetDate, reqData.afterClockOut)
     : null;
 
+  const now = admin.firestore.FieldValue.serverTimestamp();
+
+  // 申請ステータスを承認済みに更新
+  await reqRef.update({
+    status: 'approved',
+    approvedBy: auth.uid,
+    approvedAt: now,
+    updatedAt: now,
+    updatedBy: auth.uid,
+  });
+
+  // 勤怠レコードを更新または新規作成
   const attendanceRef = db
     .collection('attendance')
     .doc(`${reqData.uid}_${reqData.targetDate}`);
+  const attendanceSnap = await attendanceRef.get();
 
-  // ── トランザクション: 読み書きのみ ──────────────────────────────────────
-  await db.runTransaction(async (tx) => {
-    const [snap, attendanceSnap] = await Promise.all([
-      tx.get(reqRef),
-      tx.get(attendanceRef),
-    ]);
-
-    // 二重承認を防ぐ再確認（通常ここには到達しない）
-    if (!snap.exists || snap.data()?.status !== 'pending') return;
-
-    const now = admin.firestore.FieldValue.serverTimestamp();
-
-    tx.update(reqRef, {
-      status: 'approved',
-      approvedBy: auth.uid,
-      approvedAt: now,
+  if (attendanceSnap.exists) {
+    await attendanceRef.update({
+      clockIn: clockInTs,
+      clockOut: clockOutTs,
       updatedAt: now,
       updatedBy: auth.uid,
     });
-
-    if (attendanceSnap.exists) {
-      tx.update(attendanceRef, {
-        clockIn: clockInTs,
-        clockOut: clockOutTs,
-        updatedAt: now,
-        updatedBy: auth.uid,
-      });
-    } else {
-      tx.set(attendanceRef, {
-        uid: reqData.uid,
-        workDate: reqData.targetDate,
-        clockIn: clockInTs,
-        clockOut: clockOutTs,
-        workType: 'work',
-        comment: '',
-        status: 'none',
-        createdAt: now,
-        updatedAt: now,
-        createdBy: auth.uid,
-        updatedBy: auth.uid,
-      });
-    }
-  });
+  } else {
+    await attendanceRef.set({
+      uid: reqData.uid,
+      workDate: reqData.targetDate,
+      clockIn: clockInTs,
+      clockOut: clockOutTs,
+      workType: 'work',
+      comment: '',
+      status: 'none',
+      createdAt: now,
+      updatedAt: now,
+      createdBy: auth.uid,
+      updatedBy: auth.uid,
+    });
+  }
 
   return { success: true };
-  } catch (e) {
-    if (e instanceof HttpsError) throw e;
-    const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
-    console.error('[approveAttendanceRequest]', msg, e);
-    throw new HttpsError('internal', msg);
-  }
 });
 
 // ── rejectAttendanceRequest ───────────────────────────────────────────────────
