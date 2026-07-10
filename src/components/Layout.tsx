@@ -42,6 +42,7 @@ const adminNav = [
 
 // 管理者が自分自身のスタッフ機能を使うためのリンク
 const adminPersonalNav = [
+  { label: '自分の勤怠一覧', path: '/staff/attendance' },
   { label: '自分の修正申請', path: '/staff/correction' },
   { label: '自分の休暇申請', path: '/staff/leave' },
 ];
